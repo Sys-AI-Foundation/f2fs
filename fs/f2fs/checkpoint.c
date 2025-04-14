@@ -19,6 +19,7 @@
 #include "node.h"
 #include "segment.h"
 #include "iostat.h"
+#include "f2fs_ifs.h"
 #include <trace/events/f2fs.h>
 
 #define DEFAULT_CHECKPOINT_IOPRIO (IOPRIO_PRIO_VALUE(IOPRIO_CLASS_RT, 3))
@@ -1051,7 +1052,7 @@ void f2fs_update_dirty_folio(struct inode *inode, struct folio *folio)
 	inode_inc_dirty_pages(inode);
 	spin_unlock(&sbi->inode_lock[type]);
 
-	set_page_private_reference(&folio->page);
+	f2fs_set_folio_private_reference(folio);
 }
 
 void f2fs_remove_dirty_inode(struct inode *inode)

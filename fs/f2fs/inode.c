@@ -11,7 +11,7 @@
 #include <linux/sched/mm.h>
 #include <linux/lz4.h>
 #include <linux/zstd.h>
-
+#include <linux/pagemap.h>
 #include "f2fs.h"
 #include "node.h"
 #include "segment.h"
@@ -22,7 +22,26 @@
 #ifdef CONFIG_F2FS_FS_COMPRESSION
 extern const struct address_space_operations f2fs_compress_aops;
 #endif
-
+bool f2fs_should_use_buffered_iomap(struct inode *inode)
+{
+	if (!S_ISREG(inode->i_mode))
+		return false;
+	if(S_ISDIR(inode->i_mode)||S_ISLNK(inode->i_mode))
+		return false;
+	if(inode->i_mapping==NODE_MAPPING(F2FS_I_SB(inode)))
+		return false;
+	if(inode->i_mapping==META_MAPPING(F2FS_I_SB(inode)))
+		return false;
+	if (f2fs_is_atomic_file(inode) && !is_inode_flag_set(inode, FI_ATOMIC_COMMITTED))
+		return false;
+	// if (f2fs_compressed_file(inode))
+		// return false;
+	if (f2fs_is_pinned_file(inode))
+		return false;
+	if (f2fs_has_inline_data(inode))
+		return false;
+	return true;
+}
 void f2fs_mark_inode_dirty_sync(struct inode *inode, bool sync)
 {
 	if (is_inode_flag_set(inode, FI_NEW_INODE))
@@ -611,7 +630,14 @@ make_now:
 	} else if (S_ISREG(inode->i_mode)) {
 		inode->i_op = &f2fs_file_inode_operations;
 		inode->i_fop = &f2fs_file_operations;
-		inode->i_mapping->a_ops = &f2fs_dblock_aops;
+		// inode->i_mapping->a_ops = &f2fs_dblock_aops;
+		if(f2fs_should_use_buffered_iomap(inode))
+		{
+			mapping_set_large_folios(inode->i_mapping);
+			inode->i_mapping->a_ops = &f2fs_iomap_aops;
+		}
+		else
+			inode->i_mapping->a_ops = &f2fs_dblock_aops;
 	} else if (S_ISDIR(inode->i_mode)) {
 		inode->i_op = &f2fs_dir_inode_operations;
 		inode->i_fop = &f2fs_dir_operations;
