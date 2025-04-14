@@ -2102,7 +2102,7 @@ static inline struct dirty_seglist_info *DIRTY_I(struct f2fs_sb_info *sbi)
 
 static inline struct address_space *META_MAPPING(struct f2fs_sb_info *sbi)
 {
-	f2fs_printk(sbi, false, "meta_inode: %p\n", sbi->meta_inode);
+	f2fs_err(sbi, "meta_inode_mapping: %p\n", sbi->meta_inode->i_mapping);
 	return sbi->meta_inode->i_mapping;
 }
 

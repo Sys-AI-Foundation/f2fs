@@ -31,7 +31,10 @@ bool f2fs_should_use_buffered_iomap(struct inode *inode)
 	if(inode->i_mapping==NODE_MAPPING(F2FS_I_SB(inode)))
 		return false;
 	if(inode->i_mapping==META_MAPPING(F2FS_I_SB(inode)))
-		return false;
+	{
+		f2fs_err(F2FS_I_SB(inode), "inode mapping is meta mapping: %p", inode->i_mapping);
+		f2fs_err(F2FS_I_SB(inode), "bool mapping equal: %d",inode->i_mapping==META_MAPPING(F2FS_I_SB(inode)));
+	}
 	if (f2fs_is_atomic_file(inode) && !is_inode_flag_set(inode, FI_ATOMIC_COMMITTED))
 		return false;
 	// if (f2fs_compressed_file(inode))
