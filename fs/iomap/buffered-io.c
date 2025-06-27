@@ -937,7 +937,10 @@ retry:
 
 		if (bytes > iomap_length(iter))
 			bytes = iomap_length(iter);
-
+		/*my_debug*/
+		printk(KERN_EMERG "iomap_write_iter: pos %lld, bytes %zu, offset %zu\n",
+		       pos, bytes, offset);
+		/*my_debug*/
 		/*
 		 * Bring in the user page that we'll copy from _first_.
 		 * Otherwise there's a nasty deadlock on copying from the
@@ -960,7 +963,9 @@ retry:
 		}
 		if (iter->iomap.flags & IOMAP_F_STALE)
 			break;
-
+		/*my_debug*/
+		printk(KERN_EMERG "iomap_write_iter: folio order %d\n",folio_order(folio));
+		/*my_debug*/
 		offset = offset_in_folio(folio, pos);
 		if (bytes > folio_size(folio) - offset)
 			bytes = folio_size(folio) - offset;
@@ -969,6 +974,9 @@ retry:
 			flush_dcache_folio(folio);
 
 		copied = copy_folio_from_iter_atomic(folio, offset, bytes, i);
+		/*my_debug*/
+		printk(KERN_EMERG "iomap_write_iter: copied bytes %d\n",copied);
+		/*my_debug*/
 		written = iomap_write_end(iter, pos, bytes, copied, folio) ?
 			  copied : 0;
 

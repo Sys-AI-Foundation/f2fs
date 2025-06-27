@@ -2102,7 +2102,6 @@ static inline struct dirty_seglist_info *DIRTY_I(struct f2fs_sb_info *sbi)
 
 static inline struct address_space *META_MAPPING(struct f2fs_sb_info *sbi)
 {
-	f2fs_err(sbi, "meta_inode_mapping: %p\n", sbi->meta_inode->i_mapping);
 	return sbi->meta_inode->i_mapping;
 }
 
@@ -4042,7 +4041,7 @@ void f2fs_iomap_put_folio(struct inode *inode, loff_t pos, unsigned copied,struc
 void f2fs_init_readpage_ctx(struct f2fs_readpage_ctx *ctx,struct readahead_control *rac);
 int f2fs_compress_iomap_readahead(struct inode *inode, struct readahead_control *rac);
 int f2fs_do_read_single_folio_iomap(struct iomap_iter *iter,struct f2fs_readpage_ctx *ctx, loff_t pos,loff_t plen, loff_t poff);	
-int f2fs_do_read_multi_folios(struct compress_ctx *cc, struct bio **bio_ret,struct folio *folio, loff_t pos,struct readahead_control *rac);
+int f2fs_do_read_multi_folios(struct compress_ctx *cc, struct bio **bio_ret,struct folio *folio, loff_t pos,loff_t plen,struct readahead_control *rac);
 extern const struct iomap_ops f2fs_iomap_ops;
 extern const struct iomap_folio_ops f2fs_iomap_folio_ops;
 extern const struct iomap_ops f2fs_buffered_read_iomap_ops;

@@ -4900,6 +4900,10 @@ static int f2fs_preallocate_blocks(struct kiocb *iocb, struct iov_iter *iter,
 		ret = f2fs_convert_inline_inode(inode);
 		if (ret)
 			return ret;
+		/*buffered write can convert inline file to large normal file
+		when convert success, we uses mapping set large folios here*/
+		if(f2fs_should_use_buffered_iomap(inode))
+			mapping_set_large_folios(inode->i_mapping);
 	}
 
 	/* Do not preallocate blocks that will be written partially in 4KB. */

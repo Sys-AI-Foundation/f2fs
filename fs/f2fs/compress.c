@@ -2105,19 +2105,32 @@ void f2fs_decompress_end_io(struct decompress_io_ctx *dic, bool failed,
 	}
 
 	/* Update and unlock the cluster's pagecache pages. */
-	for (i = 0; i < dic->cluster_size; i++) {
-		struct page *rpage = dic->rpages[i];
+	// for (i = 0; i < dic->cluster_size; i++) {
+	// 	struct page *rpage = dic->rpages[i];
 
-		if (!rpage)
+	// 	if (!rpage)
+	// 		continue;
+
+	// 	if (failed)
+	// 		ClearPageUptodate(rpage);
+	// 	else
+	// 		SetPageUptodate(rpage);
+	// 	unlock_page(rpage);
+	// }
+	int num_to_skip=0;
+	for (int i = 0; i < cc->cluster_size; i++) {
+		struct folio *folio;
+		num_to_skip=1;
+		if (!cc->rpages[i])
 			continue;
-
-		if (failed)
-			ClearPageUptodate(rpage);
-		else
-			SetPageUptodate(rpage);
-		unlock_page(rpage);
+		folio = page_folio(cc->rpages[i]);
+		if(failed)
+			
+		while ((i + num_to_skip) < cc->cluster_size && cc->rpages[i + num_to_skip] &&
+		       page_folio(cc->rpages[i + num_to_skip]) == folio) {
+			num_to_skip++;
+		}
 	}
-
 	/*
 	 * Release the reference to the decompress_io_ctx that was being held
 	 * for I/O completion.

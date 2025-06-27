@@ -5200,7 +5200,7 @@ int f2fs_compress_iomap_readahead(struct inode *inode,
 	// f2fs_destroy_readpage_ctx(&ctx);
 	return ret;
 }
-int f2fs_do_read_multi_folios(struct compress_ctx *cc, struct bio **bio_ret,struct folio *folio, loff_t pos,struct readahead_control *rac)
+int f2fs_do_read_multi_folios(struct compress_ctx *cc, struct bio **bio_ret,struct folio *folio, loff_t pos,loff_t plen,struct readahead_control *rac);
 {
 	pgoff_t cur_idx = pos >> PAGE_SHIFT;
 	int ret = 0;
@@ -5212,7 +5212,14 @@ int f2fs_do_read_multi_folios(struct compress_ctx *cc, struct bio **bio_ret,stru
 			return ret;
 		cc->cluster_idx = cluster_ix;
 	}
-	f2fs_compress_ctx_add_folio(cc, folio, pos,(cc->cluster_size-cc->nr_rpages)<<PAGE_SIZE);
+	f2fs_compress_ctx_add_folio(cc, folio, pos,plen);
+	struct f2fs_iomap_folio_state* fifs = folio->private;
+	if(fifs)
+	{
+		spin_lock_irq(&fifs->state_lock);
+		fifs->read_bytes_pending += plen;
+		spin_unlock_irq(&fifs->state_lock);
+	}
 	/* No more flushing compress ctx rpages and cpages to io
 	when a new folio's cluster index change,but flush immediately when cc
 	is full or this is the last folio in rac*/
