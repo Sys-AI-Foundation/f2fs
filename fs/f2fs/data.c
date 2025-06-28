@@ -1557,8 +1557,8 @@ static bool map_is_mergeable(struct f2fs_sb_info *sbi,
  * maps continuous logical blocks to physical blocks, and return such
  * info via f2fs_map_blocks structure.
  */
-__attribute__((optimize("O0"))) int
-f2fs_map_blocks(struct inode *inode, struct f2fs_map_blocks *map, int flag)
+//__attribute__((optimize("O0"))) 
+int f2fs_map_blocks(struct inode *inode, struct f2fs_map_blocks *map, int flag)
 {
 	unsigned int maxblocks = map->m_len;
 	struct dnode_of_data dn;
@@ -3701,7 +3701,7 @@ next:
 
 	return ret;
 }
-__attribute__((optimize("O0")))
+//__attribute__((optimize("O0")))
 /*copy from iomap_writepages, but change it to support both normal and compressed file*/
 static int f2fs_write_cache_folios(struct address_space *mapping,
 				   struct writeback_control *wbc,
@@ -4182,7 +4182,7 @@ reserve_block:
 		*blk_addr = ori_blk_addr;
 	return 0;
 }
-__attribute__((optimize("O0")))
+//__attribute__((optimize("O0")))
 static int f2fs_write_begin(struct file *file, struct address_space *mapping,
 			    loff_t pos, unsigned len, struct folio **foliop,
 			    void **fsdata)
@@ -4900,7 +4900,8 @@ const struct iomap_ops f2fs_iomap_ops = {
 	.iomap_begin = f2fs_iomap_begin,
 };
 /*开始编写iomap_readahead*/
-__attribute__((optimize("O0"))) static int
+//__attribute__((optimize("O0"))) 
+static int
 f2fs_buffered_read_iomap_begin(struct inode *inode, loff_t offset,
 			       loff_t length, unsigned int flags,
 			       struct iomap *iomap, struct iomap *srcmap)
@@ -5139,7 +5140,7 @@ static int f2fs_compress_readpage_iter(struct iomap_iter *iter,struct f2fs_readp
 	}
 #ifdef CONFIG_F2FS_FS_COMPRESSION
 	if (is_compressed) {
-		ret = f2fs_do_read_multi_folios(&ctx->cc,&ctx->bio,folio, pos,ctx->rac);
+		ret = f2fs_do_read_multi_folios(&ctx->cc,&ctx->bio,folio, pos,plen,ctx->rac);
 	} else {
 		ret = f2fs_do_read_single_folio_iomap(iter, ctx, pos, plen, poff);
 	}
@@ -5171,7 +5172,7 @@ static loff_t f2fs_compress_readahead_iter(struct iomap_iter *iter,struct f2fs_r
 	}
 	return 0;
 }
-__attribute__((optimize("O0")))
+//__attribute__((optimize("O0")))
 int f2fs_compress_iomap_readahead(struct inode *inode,
 				  struct readahead_control *rac)
 {
@@ -5200,7 +5201,7 @@ int f2fs_compress_iomap_readahead(struct inode *inode,
 	// f2fs_destroy_readpage_ctx(&ctx);
 	return ret;
 }
-int f2fs_do_read_multi_folios(struct compress_ctx *cc, struct bio **bio_ret,struct folio *folio, loff_t pos,loff_t plen,struct readahead_control *rac);
+int f2fs_do_read_multi_folios(struct compress_ctx *cc, struct bio **bio_ret,struct folio *folio, loff_t pos,loff_t plen,struct readahead_control *rac)
 {
 	pgoff_t cur_idx = pos >> PAGE_SHIFT;
 	int ret = 0;
@@ -5288,7 +5289,7 @@ static void f2fs_iomap_readahead(struct readahead_control *rac)
 	else
 		iomap_readahead(rac, &f2fs_buffered_read_iomap_ops);
 }
-__attribute__((optimize("O0"))) 
+//__attribute__((optimize("O0"))) 
 static int f2fs_buffered_write_iomap_begin(struct inode *inode, loff_t pos, loff_t length,
 				unsigned flags, struct iomap *iomap,
 				struct iomap *srcmap)

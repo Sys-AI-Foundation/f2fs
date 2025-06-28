@@ -2186,7 +2186,7 @@ static int f2fs_ioc_getversion(struct file *filp, unsigned long arg)
 
 	return put_user(inode->i_generation, (int __user *)arg);
 }
-
+//__attribute__((optimize("O0")))
 static int f2fs_ioc_start_atomic_write(struct file *filp, bool truncate)
 {
 	struct inode *inode = file_inode(filp);
@@ -4948,7 +4948,8 @@ static ssize_t f2fs_iomap_buffered_write(struct kiocb *iocb, struct iov_iter *i)
 	}
 	return ret;
 }
-__attribute__((optimize("O0"))) static ssize_t
+//__attribute__((optimize("O0"))) 
+static ssize_t
 f2fs_buffered_write_iter(struct kiocb *iocb, struct iov_iter *from)
 {
 	struct file *file = iocb->ki_filp;
@@ -5125,7 +5126,8 @@ out:
 	trace_f2fs_direct_IO_exit(inode, pos, count, WRITE, ret);
 	return ret;
 }
-__attribute__((optimize("O0"))) static ssize_t
+//__attribute__((optimize("O0"))) 
+static ssize_t
 f2fs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 {
 	struct inode *inode = file_inode(iocb->ki_filp);

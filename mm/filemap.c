@@ -1956,16 +1956,15 @@ no_page:
 
 		if (order > mapping_max_folio_order(mapping))
 			order = mapping_max_folio_order(mapping);
-		/*my_debug*/
-		printk(KERN_EMERG "filemap_get_folio: index %lu, order %u, gfp %x\n",
-		       index, order, gfp);
-		/*my_debug*/
+		// /*my_debug*/
+		// printk(KERN_EMERG "filemap_get_folio: index %lu, order %u, gfp %x\n",index, order, gfp);
+		// /*my_debug*/
 		/* If we're not aligned, allocate a smaller folio */
 		if (index & ((1UL << order) - 1))
 			order = __ffs(index);
-		/*my_debug*/
-		printk(KERN_EMERG "filemap_get_folio: aligned order %u\n",order);
-		/*my_debug*/
+		// /*my_debug*/
+		// printk(KERN_EMERG "filemap_get_folio: aligned order %u\n",order);
+		// /*my_debug*/
 		do {
 			gfp_t alloc_gfp = gfp;
 
@@ -1975,9 +1974,9 @@ no_page:
 			folio = filemap_alloc_folio(alloc_gfp, order);
 			if (!folio)
 				continue;
-			/*my_debug*/
-			printk(KERN_EMERG "filemap_get_folio: final order %u\n",order);
-			/*my_debug*/
+			// /*my_debug*/
+			// printk(KERN_EMERG "filemap_get_folio: final order %u\n",order);
+			// /*my_debug*/
 			/* Init accessed so avoid atomic mark_page_accessed later */
 			if (fgp_flags & FGP_ACCESSED)
 				__folio_set_referenced(folio);

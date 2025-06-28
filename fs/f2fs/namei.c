@@ -135,7 +135,7 @@ int f2fs_update_extension_list(struct f2fs_sb_info *sbi, const char *name,
 	}
 	return 0;
 }
-__attribute__((optimize("O0")))
+//__attribute__((optimize("O0")))
 static void set_compress_new_inode(struct f2fs_sb_info *sbi, struct inode *dir,
 				struct inode *inode, const unsigned char *name)
 {
@@ -215,7 +215,7 @@ static void set_file_temperature(struct f2fs_sb_info *sbi, struct inode *inode,
 	else
 		file_set_hot(inode);
 }
-__attribute__((optimize("O0")))
+//__attribute__((optimize("O0")))
 static struct inode *f2fs_new_inode(struct mnt_idmap *idmap,
 						struct inode *dir, umode_t mode,
 						const char *name)

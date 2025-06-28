@@ -989,7 +989,7 @@ static int __f2fs_get_cluster_blocks(struct inode *inode,
 
 	return count;
 }
-
+//__attribute__((optimize("O0")))
 static int __f2fs_cluster_blocks(struct inode *inode, unsigned int cluster_idx,
 				enum cluster_check_type type)
 {
@@ -1276,7 +1276,7 @@ unlock_pages:
 out:
 	return ret;
 }
-// __attribute__((optimize("O0")))
+// //__attribute__((optimize("O0")))
 // static int prepare_compress_overwrite(struct compress_ctx *cc,
 // 				      struct page **pagep, pgoff_t index,
 // 				      void **fsdata)
@@ -2118,16 +2118,16 @@ void f2fs_decompress_end_io(struct decompress_io_ctx *dic, bool failed,
 	// 	unlock_page(rpage);
 	// }
 	int num_to_skip=0;
-	for (int i = 0; i < cc->cluster_size; i++) {
+	for (int i = 0; i < dic->cluster_size; i++) {
 		struct folio *folio;
 		num_to_skip=1;
-		if (!cc->rpages[i])
+		if (!dic->rpages[i])
 			continue;
-		folio = page_folio(cc->rpages[i]);
+		folio = page_folio(dic->rpages[i]);
 		if(failed)
 			
-		while ((i + num_to_skip) < cc->cluster_size && cc->rpages[i + num_to_skip] &&
-		       page_folio(cc->rpages[i + num_to_skip]) == folio) {
+		while ((i + num_to_skip) < dic->cluster_size && dic->rpages[i + num_to_skip] &&
+		       page_folio(dic->rpages[i + num_to_skip]) == folio) {
 			num_to_skip++;
 		}
 	}
