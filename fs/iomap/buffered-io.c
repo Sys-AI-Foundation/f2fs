@@ -937,9 +937,9 @@ retry:
 
 		if (bytes > iomap_length(iter))
 			bytes = iomap_length(iter);
-		/*my_debug*/
-		printk(KERN_EMERG "iomap_write_iter: pos %lld, bytes %zu, offset %zu\n",
-		       pos, bytes, offset);
+		// /*my_debug*/
+		// printk(KERN_EMERG "iomap_write_iter: pos %lld, bytes %zu, offset %zu\n",
+		//        pos, bytes, offset);
 		/*my_debug*/
 		/*
 		 * Bring in the user page that we'll copy from _first_.
@@ -974,9 +974,9 @@ retry:
 			flush_dcache_folio(folio);
 
 		copied = copy_folio_from_iter_atomic(folio, offset, bytes, i);
-		/*my_debug*/
-		printk(KERN_EMERG "iomap_write_iter: copied bytes %d\n",copied);
-		/*my_debug*/
+		// /*my_debug*/
+		// printk(KERN_EMERG "iomap_write_iter: copied bytes %d\n",copied);
+		// /*my_debug*/
 		written = iomap_write_end(iter, pos, bytes, copied, folio) ?
 			  copied : 0;
 

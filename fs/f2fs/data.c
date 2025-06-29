@@ -4404,8 +4404,12 @@ bool f2fs_release_folio(struct folio *folio, gfp_t wait)
 	/* If this is dirty folio, keep private data */
 	if (folio_test_dirty(folio))
 		return false;
-
-	clear_page_private_all(&folio->page);
+	// f2fs_clear_folio_private_all(folio);
+	struct f2fs_iomap_folio_state* fifs= folio->private;
+	if (fifs) {
+		f2fs_ifs_free(folio);
+	}
+	// clear_page_private_all(&folio->page);
 	return true;
 }
 
@@ -5565,7 +5569,7 @@ const struct address_space_operations f2fs_iomap_aops = {
 	// .dirty_folio		= iomap_dirty_folio,
 	// .bmap			= f2fs_bmap,
 	// .invalidate_folio	= iomap_invalidate_folio,
-	// .release_folio		= iomap_release_folio,
+	.release_folio		= f2fs_iomap_release_folio,
 	// .direct_IO		= noop_direct_IO,
 	// .migrate_folio		= filemap_migrate_folio,
 	// .is_partially_uptodate  = iomap_is_partially_uptodate,
