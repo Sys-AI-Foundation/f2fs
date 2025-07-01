@@ -3250,6 +3250,7 @@ redirty_out:
 }
 /*Write one dirty segment for one folio
 all the retry logic is moved to here from f2fs_write_raw_pages and f2fs_write_cache_folios */
+__attribute__((optimize("O0")))
 int f2fs_write_single_data_folio(struct folio *folio, int *submitted_pages_count,
 				struct bio **bio_ptr, sector_t *last_block_ptr,
 				struct writeback_control *wbc,
@@ -3701,7 +3702,7 @@ next:
 
 	return ret;
 }
-//__attribute__((optimize("O0")))
+__attribute__((optimize("O0")))
 /*copy from iomap_writepages, but change it to support both normal and compressed file*/
 static int f2fs_write_cache_folios(struct address_space *mapping,
 				   struct writeback_control *wbc,
@@ -3728,10 +3729,10 @@ static int f2fs_write_cache_folios(struct address_space *mapping,
 		.rlen = PAGE_SIZE * F2FS_I(inode)->i_cluster_size,
 		.private = NULL,
 	};
-	if(f2fs_init_compress_ctx(&cc))
+	if(f2fs_compressed_file(inode))
 	{
-		return -ENOMEM;
-	} 
+		f2fs_init_compress_ctx(&cc);
+	}
 #endif
 	if (get_dirty_pages(mapping->host) <=
 	    SM_I(F2FS_M_SB(mapping))->min_hot_blocks)
@@ -5293,7 +5294,7 @@ static void f2fs_iomap_readahead(struct readahead_control *rac)
 	else
 		iomap_readahead(rac, &f2fs_buffered_read_iomap_ops);
 }
-//__attribute__((optimize("O0"))) 
+__attribute__((optimize("O0"))) 
 static int f2fs_buffered_write_iomap_begin(struct inode *inode, loff_t pos, loff_t length,
 				unsigned flags, struct iomap *iomap,
 				struct iomap *srcmap)
@@ -5303,7 +5304,10 @@ static int f2fs_buffered_write_iomap_begin(struct inode *inode, loff_t pos, loff
 	struct folio *ifolio = NULL;
 	int err = 0;
 
-	
+	#ifdef CONFIG_F2FS_DEBUG_PRINT
+	f2fs_err(sbi, "%s:  pos=%lld, length=%lld,convert_pages=%d",
+			__func__, pos, length, flags,length >> PAGE_SHIFT);
+	#endif
 	iomap->offset = pos; 
 	iomap->bdev = sbi->sb->s_bdev; // Default block device
 	iomap->dax_dev = NULL;
@@ -5569,7 +5573,7 @@ const struct address_space_operations f2fs_iomap_aops = {
 	// .dirty_folio		= iomap_dirty_folio,
 	// .bmap			= f2fs_bmap,
 	// .invalidate_folio	= iomap_invalidate_folio,
-	.release_folio		= f2fs_iomap_release_folio,
+	.release_folio		= f2fs_release_folio,
 	// .direct_IO		= noop_direct_IO,
 	// .migrate_folio		= filemap_migrate_folio,
 	// .is_partially_uptodate  = iomap_is_partially_uptodate,

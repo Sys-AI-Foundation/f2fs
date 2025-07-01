@@ -27,7 +27,9 @@ static void *page_array_alloc(struct inode *inode, int nr)
 {
 	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
 	unsigned int size = sizeof(struct page *) * nr;
-
+	#ifdef CONFIG_F2FS_DEBUG_PRINT
+	f2fs_err(sbi, "sbi->page_array_slab: %p\n", sbi->page_array_slab);
+	#endif
 	if (likely(size <= sbi->page_array_slab_size))
 		return f2fs_kmem_cache_alloc(sbi->page_array_slab,
 					GFP_F2FS_ZERO, false, F2FS_I_SB(inode));
