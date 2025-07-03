@@ -1,4 +1,4 @@
-make O=../f2fs_benchver ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig Image  -j8 &> ../f2fs_benchver/makebenchlog.txt
+make O=../f2fs_head ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig Image  -j8 &> ../f2fs_head/makebenchlog.txt
 # cp ./fs/f2fs/f2fs.ko ../modshare/
 # cp ./modules.* ../modshare/
 # cp ./lib/zstd/zstd_compress.ko ../modshare/

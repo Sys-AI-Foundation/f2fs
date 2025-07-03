@@ -99,11 +99,6 @@ bool f2fs_is_compressed_page(struct page *page)
 		*((u32 *)page_private(page)) != F2FS_COMPRESSED_PAGE_MAGIC);
 	return true;
 }
-<<<<<<< HEAD
-
-static void f2fs_set_compressed_page(struct page *page,
-		struct inode *inode, pgoff_t index, void *data)
-=======
 bool f2fs_is_compressed_folio(struct folio *folio)
 { 
 	if(!folio_test_private(folio))
@@ -117,7 +112,6 @@ bool f2fs_is_compressed_folio(struct folio *folio)
 }
 static void f2fs_set_compressed_page(struct page *page, struct inode *inode,
 				     pgoff_t index, void *data)
->>>>>>> 0bc367b7ca1c (加入了大量的调试打印代码,由一个自定义的编译开关进行控制)
 {
 	struct folio *folio = page_folio(page);
 
