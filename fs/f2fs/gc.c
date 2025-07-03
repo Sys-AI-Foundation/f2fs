@@ -1454,8 +1454,24 @@ static int move_data_page(struct inode *inode, block_t bidx, int gc_type,
 {
 	struct folio *folio;
 	int err = 0;
-
+// 	#ifdef CONFIG_F2FS_DEBUG_PRINT
+// 	f2fs_err(F2FS_I_SB(inode),
+// 		"move_data_page: bidx %u, segno %u, off %d, gc_type %d",
+// 		bidx, segno, off, gc_type);
+// 	f2fs_err(F2FS_I_SB(inode),"move_data_page:inode ino %lu,i_nlink%d,i_count%d",inode->i_ino,inode->i_nlink,inode->i_count);
+// 	if (!list_empty(&inode->i_lru)) {
+// 		f2fs_err(F2FS_I_SB(inode),"move_data_page:inode ino in lru");
+//     // 这个 inode 确实在 inode_lru 列表上。
+//     // 这几乎可以肯定地意味着它的 i_nlink == 0 且 i_count == 0。
+// }
+// 	#endif
 	folio = f2fs_get_lock_data_folio(inode, bidx, true);
+	// #ifdef CONFIG_F2FS_DEBUG_PRINT
+	// f2fs_err(F2FS_I_SB(inode),"move_data_page:f2fs sb info of inode %p",F2FS_I_SB(inode));
+	// f2fs_err(F2FS_I_SB(inode),
+	// 	"move_data_page:folio %p,folio_index %u,folio_flags %x,folio_mapping %p",
+	// 	folio,folio->index,folio->flags,folio->mapping);
+	// #endif
 	if (IS_ERR(folio))
 		return PTR_ERR(folio);
 
@@ -1474,6 +1490,15 @@ static int move_data_page(struct inode *inode, block_t bidx, int gc_type,
 			goto out;
 		}
 		folio_mark_dirty(folio);
+		// #ifdef CONFIG_F2FS_DEBUG_PRINT
+		// f2fs_err(F2FS_I_SB(inode),
+		// 	"move_data_page:folio->page.flags%x",folio->page.flags);	
+		// if (!PagePrivate(&folio->page))
+		// {
+
+		// 	attach_page_private(&folio->page, (void *)0);
+		// }
+		// #endif
 		set_page_private_gcing(&folio->page);
 	} else {
 		struct f2fs_io_info fio = {

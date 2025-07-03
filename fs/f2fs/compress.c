@@ -99,9 +99,25 @@ bool f2fs_is_compressed_page(struct page *page)
 		*((u32 *)page_private(page)) != F2FS_COMPRESSED_PAGE_MAGIC);
 	return true;
 }
+<<<<<<< HEAD
 
 static void f2fs_set_compressed_page(struct page *page,
 		struct inode *inode, pgoff_t index, void *data)
+=======
+bool f2fs_is_compressed_folio(struct folio *folio)
+{ 
+	if(!folio_test_private(folio))
+		return false;
+	if(f2fs_folio_private_nonpointer(folio))
+		return false;
+	if(folio_order(folio)>0)/*case for normal iomap_folio_state*/
+		return false;
+	f2fs_bug_on(F2FS_P_SB(&folio->page),(u32)folio->private!= F2FS_COMPRESSED_PAGE_MAGIC);
+	return true;
+}
+static void f2fs_set_compressed_page(struct page *page, struct inode *inode,
+				     pgoff_t index, void *data)
+>>>>>>> 0bc367b7ca1c (加入了大量的调试打印代码,由一个自定义的编译开关进行控制)
 {
 	struct folio *folio = page_folio(page);
 
@@ -1811,7 +1827,7 @@ static int f2fs_write_raw_pages(struct compress_ctx *cc, int *submitted_p,
 		// compr_blocks, false);
 		ret = f2fs_write_single_data_folio(folio, &submitted, NULL,
 						   NULL, wbc, io_type,
-						   compr_blocks, false, start,
+						   compr_blocks, true, false,start,
 						   end);
 		struct f2fs_iomap_folio_state *fifs = folio->private;
 		if (ret) {

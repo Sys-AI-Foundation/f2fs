@@ -4020,8 +4020,8 @@ int f2fs_write_single_data_page(struct folio *folio, int *submitted,
 int f2fs_write_single_data_folio(struct folio *folio, int *submitted_pages_count,
 				struct bio **bio_ptr, sector_t *last_block_ptr,
 				struct writeback_control *wbc,
-				enum iostat_type io_type,
-				unsigned int compr_blocks, bool is_reclaim,
+				enum iostat_type io_type,int compr_blocks,
+				bool from_compress, bool is_reclaim,
 				u64 start, u64 end);
 int f2fs_write_split_folio_range(struct address_space *mapping,
 					struct writeback_control *wbc,
@@ -4491,6 +4491,7 @@ enum cluster_check_type {
 	CLUSTER_RAW_BLKS    /* return # of raw blocks in a cluster */
 };
 bool f2fs_is_compressed_page(struct page *page);
+bool f2fs_is_compressed_folio(struct folio *folio);
 struct folio *f2fs_compress_control_folio(struct folio *folio);
 int f2fs_prepare_compress_overwrite(struct inode *inode,
 			struct page **pagep, pgoff_t index, void **fsdata);

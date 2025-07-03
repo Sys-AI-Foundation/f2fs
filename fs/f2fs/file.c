@@ -278,6 +278,12 @@ static int f2fs_do_sync_file(struct file *file, loff_t start, loff_t end,
 	if (datasync || get_dirty_pages(inode) <= SM_I(sbi)->min_fsync_blocks)
 		set_inode_flag(inode, FI_NEED_IPU);
 	ret = file_write_and_wait_range(file, start, end);
+	#ifdef CONFIG_F2FS_DEBUG_PRINT
+	if (ret) {
+		f2fs_err(sbi, "f2fs_sync_file: file_write_and_wait_range failed with %d", ret);
+		return ret;
+	}
+	#endif
 	clear_inode_flag(inode, FI_NEED_IPU);
 
 	if (ret || is_sbi_flag_set(sbi, SBI_CP_DISABLED)) {

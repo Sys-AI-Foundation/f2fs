@@ -2641,7 +2641,7 @@ static int writeback_use_writepage(struct address_space *mapping,
 
 	return err;
 }
-
+__attribute__((optimize("O0")))
 int do_writepages(struct address_space *mapping, struct writeback_control *wbc)
 {
 	int ret;
