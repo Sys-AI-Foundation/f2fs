@@ -323,7 +323,7 @@ EXPORT_SYMBOL_GPL(page_cache_ra_unbounded);
  * behaviour which would occur if page allocations are causing VM writeback.
  * We really don't want to intermingle reads and writes like that.
  */
-static void do_page_cache_ra(struct readahead_control *ractl,
+static int do_page_cache_ra(struct readahead_control *ractl,
 		unsigned long nr_to_read, unsigned long lookahead_size)
 {
 	struct address_space *mapping = ractl->mapping;
@@ -332,11 +332,11 @@ static void do_page_cache_ra(struct readahead_control *ractl,
 	pgoff_t end_index;	/* The last page we want to read */
 
 	if (isize == 0)
-		return;
+		return -EINVAL;
 
 	end_index = (isize - 1) >> PAGE_SHIFT;
 	if (index > end_index)
-		return;
+		return -EINVAL;
 	/* Don't read past the page containing the last byte of the file */
 	if (nr_to_read > end_index - index) {
 		nr_to_read = end_index - index + 1;
@@ -347,35 +347,32 @@ static void do_page_cache_ra(struct readahead_control *ractl,
 	filemap_invalidate_lock_shared(mapping);
 	page_cache_ra_unbounded(ractl, nr_to_read, lookahead_size);
 	filemap_invalidate_unlock_shared(mapping);
+	return 0;
 }
 
 /*
- * Chunk the readahead into 2 megabyte units, so that we don't pin too much
- * memory at once.
+ * Chunk the readahead per the block device capacity, and read all nr_to_read.
  */
 void force_page_cache_ra(struct readahead_control *ractl,
 		unsigned long nr_to_read)
 {
 	struct address_space *mapping = ractl->mapping;
-	struct file_ra_state *ra = ractl->ra;
 	struct backing_dev_info *bdi = inode_to_bdi(mapping->host);
-	unsigned long max_pages;
+	unsigned long this_chunk;
 
 	if (unlikely(!mapping->a_ops->read_folio && !mapping->a_ops->readahead))
 		return;
 
 	/*
-	 * If the request exceeds the readahead window, allow the read to
-	 * be up to the optimal hardware IO size
+	 * Consider the optimal hardware IO size for readahead chunk.
 	 */
-	max_pages = max_t(unsigned long, bdi->io_pages, ra->ra_pages);
-	nr_to_read = min_t(unsigned long, nr_to_read, max_pages);
-	while (nr_to_read) {
-		unsigned long this_chunk = (2 * 1024 * 1024) / PAGE_SIZE;
+	this_chunk = max_t(unsigned long, bdi->io_pages, ractl->ra->ra_pages);
 
-		if (this_chunk > nr_to_read)
-			this_chunk = nr_to_read;
-		do_page_cache_ra(ractl, this_chunk, 0);
+	while (nr_to_read) {
+		this_chunk = min_t(unsigned long, this_chunk, nr_to_read);
+
+		if (do_page_cache_ra(ractl, this_chunk, 0))
+			break;
 
 		nr_to_read -= this_chunk;
 	}
