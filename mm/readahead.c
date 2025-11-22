@@ -357,6 +357,7 @@ void force_page_cache_ra(struct readahead_control *ractl,
 		unsigned long nr_to_read)
 {
 	struct address_space *mapping = ractl->mapping;
+	struct inode *inode = mapping->host;
 	struct backing_dev_info *bdi = inode_to_bdi(mapping->host);
 	unsigned long this_chunk;
 
@@ -369,10 +370,18 @@ void force_page_cache_ra(struct readahead_control *ractl,
 	this_chunk = max_t(unsigned long, bdi->io_pages, ractl->ra->ra_pages);
 
 	while (nr_to_read) {
+		unsigned long index = readahead_index(ractl);
+		pgoff_t end_index = (i_size_read(inode) - 1) >> PAGE_SHIFT;
+
+		if (index > end_index)
+			break;
+
+		if (nr_to_read > end_index - index)
+			nr_to_read = end_index - index + 1;
+
 		this_chunk = min_t(unsigned long, this_chunk, nr_to_read);
 
-		if (do_page_cache_ra(ractl, this_chunk, 0))
-			break;
+		page_cache_sync_ra(ractl, this_chunk);
 
 		nr_to_read -= this_chunk;
 	}
@@ -596,7 +605,7 @@ void page_cache_sync_ra(struct readahead_control *ractl,
 
 	/* be dumb */
 	if (do_forced_ra) {
-		force_page_cache_ra(ractl, req_count);
+		do_page_cache_ra(ractl, req_count, 0);
 		return;
 	}
 
