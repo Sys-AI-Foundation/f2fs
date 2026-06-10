@@ -5065,6 +5065,11 @@ try_onemore:
 
 	sb->s_fs_info = sbi;
 	sbi->raw_super = raw_super;
+	/*
+	 * SZ_16K restricts the time spent on completing writes to about 150
+	 * microseconds on an Arm Cortex-A520 core.
+	 */
+	sbi->max_atc_write_bio_size = SZ_16K;
 
 	INIT_WORK(&sbi->s_error_work, f2fs_record_error_work);
 	memcpy(sbi->errors, raw_super->s_errors, MAX_F2FS_ERRORS);
