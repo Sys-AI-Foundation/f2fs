@@ -1855,15 +1855,15 @@ static int do_checkpoint(struct f2fs_sb_info *sbi, struct cp_control *cpc)
 		start_blk += NR_CURSEG_NODE_TYPE;
 	}
 
-	/* Here, we have one bio having CP pack except cp pack 2 page */
+	/* Here, we have one bio having CP pack except cp pack 2 blocks */
 	f2fs_sync_meta_caches(sbi, LONG_MAX, true, FS_CP_META_IO);
 	stat_cp_time(cpc, CP_TIME_SYNC_CP_META);
 
-	/* Wait for all dirty meta pages to be submitted for IO */
+	/* Wait for all dirty meta blocks to be submitted for IO */
 	f2fs_sync_dirty_data(sbi, F2FS_DIRTY_META);
 	stat_cp_time(cpc, CP_TIME_WAIT_DIRTY_META);
 
-	/* wait for previous submitted meta pages writeback */
+	/* wait for previous submitted meta blocks writeback */
 	f2fs_sync_dirty_data(sbi, F2FS_WB_CP_DATA);
 	stat_cp_time(cpc, CP_TIME_WAIT_CP_DATA);
 
@@ -1873,14 +1873,14 @@ static int do_checkpoint(struct f2fs_sb_info *sbi, struct cp_control *cpc)
 		return err;
 	stat_cp_time(cpc, CP_TIME_FLUSH_DEVICE);
 
-	/* barrier and flush checkpoint cp pack 2 page if it can */
+	/* barrier and flush checkpoint cp pack 2 blocks if it can */
 	commit_checkpoint(sbi, ckpt, start_blk);
 	f2fs_sync_dirty_data(sbi, F2FS_WB_CP_DATA);
 	stat_cp_time(cpc, CP_TIME_WAIT_LAST_CP);
 
 	/*
-	 * invalidate intermediate page cache borrowed from meta inode which are
-	 * used for migration of encrypted, verity or compressed inode's blocks.
+	 * invalidate intermediate meta cache used for migration of
+	 * encrypted, verity or compressed inode's blocks.
 	 */
 	if (f2fs_sb_has_encrypt(sbi) || f2fs_sb_has_verity(sbi) ||
 		f2fs_sb_has_compression(sbi)) {
@@ -1903,7 +1903,7 @@ static int do_checkpoint(struct f2fs_sb_info *sbi, struct cp_control *cpc)
 	__set_cp_next_pack(sbi);
 
 	/*
-	 * redirty superblock if metadata like node page or inode cache is
+	 * redirty superblock if metadata like node caches or inode cache is
 	 * updated during writing checkpoint.
 	 */
 	if (get_nr_caches(sbi, F2FS_DIRTY_NODES) ||
