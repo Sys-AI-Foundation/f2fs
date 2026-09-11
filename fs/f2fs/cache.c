@@ -28,7 +28,7 @@ void f2fs_cache_wait_writeback_cond(struct f2fs_cached_block *entry,
 		return;
 
 	/* submit cached bio */
-	f2fs_submit_merged_write_cache(entry, type);
+	f2fs_submit_merged_write_cache(entry->cache->sbi, entry, 0, type);
 
 	wait_on_bit_io(&entry->state, F2FS_BLOCK_WRITEBACK,
 					TASK_UNINTERRUPTIBLE);
@@ -65,8 +65,8 @@ bool f2fs_mark_cache_dirty(struct f2fs_cached_block *entry)
 	f2fs_cache_set_uptodate(entry);
 
 #ifdef CONFIG_F2FS_CHECK_FS
-	if (cache->type == F2FS_NODE_CACHE && IS_INODE(cache->sbi, cache_folio(entry)))
-		f2fs_inode_chksum_set(cache->sbi, cache_folio(entry));
+	if (f2fs_is_node_cache(entry) && IS_INODE(cache->sbi, entry))
+		f2fs_inode_chksum_set(cache->sbi, entry);
 #endif
 
 	if (!f2fs_cache_test_and_set_dirty(entry)) {
@@ -654,6 +654,7 @@ static int f2fs_cache_writeback_kthread(void *data)
 			continue;
 
 		f2fs_write_meta_caches(sbi);
+		f2fs_write_node_caches(sbi);
 	}
 	return 0;
 }

@@ -48,6 +48,7 @@ struct f2fs_cached_block_list {
 };
 
 #define IS_META_CACHE(cache) (cache->type == F2FS_META_CACHE)
+#define IS_NODE_CACHE(cache) (cache->type == F2FS_NODE_CACHE)
 
 /* Flags for f2fs_cached_block state */
 enum f2fs_cached_state {
@@ -211,7 +212,7 @@ void f2fs_stop_cache_wb_thread(struct f2fs_sb_info *sbi);
 	f2fs_grab_cache(NODE_CACHE(sbi), blkaddr,	\
 	F2FS_CACHE_LOCK_CREATE)
 #define f2fs_find_node_cache(sbi, blkaddr)		\
-	f2fs_find_cache(NODE_CACHE(sbi), blkaddr)
+	f2fs_find_cache(NODE_CACHE(sbi), blkaddr, F2FS_CACHE_ACCESS)
 #define f2fs_invalidate_node_cache(sbi, blkaddr)	\
 	f2fs_drop_cache_range(NODE_CACHE(sbi), blkaddr, 1, false)
 #define f2fs_truncate_node_caches(sbi, start, len)	\
