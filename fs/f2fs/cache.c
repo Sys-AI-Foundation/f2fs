@@ -645,6 +645,8 @@ static int f2fs_cache_writeback_kthread(void *data)
 			break;
 		if (f2fs_cp_error(sbi))
 			continue;
+
+		f2fs_write_meta_caches(sbi);
 	}
 	return 0;
 }
