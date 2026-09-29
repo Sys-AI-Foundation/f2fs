@@ -18,6 +18,8 @@
 #include <trace/events/f2fs.h>
 #include "segment.h"
 
+static bool f2fs_cache_put(struct f2fs_cached_block *entry);
+
 void f2fs_cache_wait_writeback_cond(struct f2fs_cached_block *entry,
 					enum page_type type)
 {
@@ -306,7 +308,19 @@ void f2fs_lock_cache(struct f2fs_cached_block *entry)
 
 void f2fs_unlock_cache(struct f2fs_cached_block *entry)
 {
+	/*
+	 * In asynchronous read I/O completion (e.g. from f2fs_ra_node_cache()),
+	 * the I/O completion does not hold a reference of its own. Once
+	 * clear_and_wake_up_bit() clears F2FS_BLOCK_LOCKED, a concurrent waiter
+	 * in f2fs_lock_cache() (e.g. from f2fs_truncate_cache()) can wake up,
+	 * truncate the entry, and drop the final reference before wake_up_bit()
+	 * finishes.
+	 * Pin the entry here to make sure it is not freed before wake_up_bit()
+	 * completes.
+	 */
+	f2fs_cache_get(entry);
 	clear_and_wake_up_bit(F2FS_BLOCK_LOCKED, &entry->state);
+	f2fs_cache_put(entry);
 }
 
 bool f2fs_put_cache(struct f2fs_cached_block *entry, bool unlock)
