@@ -119,7 +119,15 @@ void f2fs_end_cache_writeback(struct f2fs_cached_block *entry)
 	 */
 	f2fs_cache_update_tag(entry, F2FS_CACHE_TAG_WRITEBACK,
 						F2FS_CACHE_TAG_NONE);
+	/*
+	 * Writeback does not hold an entry reference of its own, relying
+	 * on truncation to wait for the clearing of F2FS_BLOCK_WRITEBACK.
+	 * But here we must make sure that the entry is not freed and
+	 * reused before clear_and_wake_up_bit().
+	 */
+	f2fs_cache_get(entry);
 	clear_and_wake_up_bit(F2FS_BLOCK_WRITEBACK, &entry->state);
+	f2fs_cache_put(entry);
 }
 
 static int f2fs_cache_refcount(struct f2fs_cached_block *entry)
