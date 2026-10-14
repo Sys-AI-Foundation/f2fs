@@ -1900,6 +1900,7 @@ struct f2fs_sb_info {
 	block_t reserved_blocks;		/* configurable reserved blocks */
 	block_t current_reserved_blocks;	/* current reserved blocks */
 	block_t alias_reserved_blocks;		/* reserved blocks for device alias */
+	block_t resize_reserved_blocks;		/* reserved blocks for resize_fs */
 
 	/* Additional tracking for no checkpoint mode */
 	block_t unusable_block_count;		/* # of blocks saved by last cp */
@@ -2669,16 +2670,18 @@ static inline bool __allow_reserved_root(struct f2fs_sb_info *sbi,
 	return false;
 }
 
-static inline unsigned int get_available_block_count(struct f2fs_sb_info *sbi,
-						struct inode *inode, bool cap)
+static inline unsigned int __get_available_block_count(
+					struct f2fs_sb_info *sbi,
+					bool allow_root)
 {
 	block_t avail_user_block_count;
 
 	avail_user_block_count = sbi->user_block_count -
 					sbi->current_reserved_blocks -
-					sbi->alias_reserved_blocks;
+					sbi->alias_reserved_blocks -
+					sbi->resize_reserved_blocks;
 
-	if (test_opt(sbi, RESERVE_ROOT) && !__allow_reserved_root(sbi, inode, cap))
+	if (test_opt(sbi, RESERVE_ROOT) && !allow_root)
 		avail_user_block_count -= F2FS_OPTION(sbi).root_reserved_blocks;
 
 	if (unlikely(is_sbi_flag_set(sbi, SBI_CP_DISABLED))) {
@@ -2689,6 +2692,13 @@ static inline unsigned int get_available_block_count(struct f2fs_sb_info *sbi,
 	}
 
 	return avail_user_block_count;
+}
+
+static inline unsigned int get_available_block_count(struct f2fs_sb_info *sbi,
+						struct inode *inode, bool cap)
+{
+	return __get_available_block_count(sbi,
+				__allow_reserved_root(sbi, inode, cap));
 }
 
 static inline void f2fs_i_blocks_write(struct inode *, block_t, bool, bool);
