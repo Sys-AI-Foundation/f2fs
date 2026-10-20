@@ -1945,10 +1945,20 @@ int f2fs_write_checkpoint(struct f2fs_sb_info *sbi, struct cp_control *cpc)
 
 	stat_cp_time(cpc, CP_TIME_LOCK);
 
-	if (!is_sbi_flag_set(sbi, SBI_IS_DIRTY) &&
-		((cpc->reason & CP_FASTBOOT) || (cpc->reason & CP_SYNC) ||
-		((cpc->reason & CP_DISCARD) && !sbi->discard_blks)))
-		goto out;
+	if (!is_sbi_flag_set(sbi, SBI_IS_DIRTY)) {
+		if (cpc->reason & (CP_FASTBOOT | CP_SYNC)) {
+			/*
+			 * The data that fsync or syncfs waited for may have
+			 * completed after the last checkpoint flushed the
+			 * devices, and that checkpoint may already point to
+			 * it, so flush the devices.
+			 */
+			err = f2fs_flush_all_devices(sbi);
+			goto out;
+		}
+		if ((cpc->reason & CP_DISCARD) && !sbi->discard_blks)
+			goto out;
+	}
 	if (unlikely(f2fs_cp_error(sbi))) {
 		err = -EIO;
 		goto out;

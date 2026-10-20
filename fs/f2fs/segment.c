@@ -822,6 +822,23 @@ int f2fs_flush_device_cache(struct f2fs_sb_info *sbi)
 	return ret;
 }
 
+/*
+ * Flush the write caches of all devices, regardless of which ones received
+ * writes since the last checkpoint.
+ */
+int f2fs_flush_all_devices(struct f2fs_sb_info *sbi)
+{
+	int ret, i;
+
+	if (test_opt(sbi, NOBARRIER))
+		return 0;
+
+	ret = __submit_flush_wait(sbi, sbi->sb->s_bdev);
+	for (i = 1; !ret && i < sbi->s_ndevs; i++)
+		ret = __submit_flush_wait(sbi, FDEV(i).bdev);
+	return ret;
+}
+
 static void __locate_dirty_segment(struct f2fs_sb_info *sbi, unsigned int segno,
 		enum dirty_type dirty_type)
 {
