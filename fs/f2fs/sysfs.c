@@ -594,6 +594,8 @@ out:
 	}
 #endif
 	if (a->struct_type == RESERVED_BLOCKS) {
+		block_t avail, valid;
+
 		spin_lock(&sbi->stat_lock);
 		if (t > (unsigned long)(sbi->user_block_count -
 				F2FS_OPTION(sbi).root_reserved_blocks)) {
@@ -601,8 +603,15 @@ out:
 			return -EINVAL;
 		}
 		*ui = t;
+		/*
+		 * Exclude the space reserved for device aliasing and resize_fs,
+		 * otherwise the reserved blocks can take it and make them fail.
+		 */
+		avail = sbi->user_block_count - sbi->alias_reserved_blocks -
+					sbi->resize_reserved_blocks;
+		valid = valid_user_blocks(sbi);
 		sbi->current_reserved_blocks = min(sbi->reserved_blocks,
-				sbi->user_block_count - valid_user_blocks(sbi));
+				avail > valid ? avail - valid : 0);
 		spin_unlock(&sbi->stat_lock);
 		return count;
 	}
