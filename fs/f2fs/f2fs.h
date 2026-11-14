@@ -2768,23 +2768,20 @@ static inline bool __allow_reserved_root(struct f2fs_sb_info *sbi,
 static inline unsigned int get_available_block_count(struct f2fs_sb_info *sbi,
 						struct inode *inode, bool cap)
 {
-	block_t avail_user_block_count;
-
-	avail_user_block_count = sbi->user_block_count -
-					sbi->current_reserved_blocks -
+	u64 reserved = (u64)sbi->current_reserved_blocks +
 					sbi->alias_reserved_blocks;
 
 	if (test_opt(sbi, RESERVE_ROOT) && !__allow_reserved_root(sbi, inode, cap))
-		avail_user_block_count -= F2FS_OPTION(sbi).root_reserved_blocks;
+		reserved += F2FS_OPTION(sbi).root_reserved_blocks;
 
-	if (unlikely(is_sbi_flag_set(sbi, SBI_CP_DISABLED))) {
-		if (avail_user_block_count > sbi->unusable_block_count)
-			avail_user_block_count -= sbi->unusable_block_count;
-		else
-			avail_user_block_count = 0;
-	}
+	if (unlikely(is_sbi_flag_set(sbi, SBI_CP_DISABLED)))
+		reserved += sbi->unusable_block_count;
 
-	return avail_user_block_count;
+	/* the reservations can overlap each other, so do not wrap around */
+	if (unlikely(reserved >= sbi->user_block_count))
+		return 0;
+
+	return sbi->user_block_count - reserved;
 }
 
 static inline void f2fs_i_blocks_write(struct inode *, block_t, bool, bool);
