@@ -498,6 +498,14 @@ sync_nodes:
 	}
 
 	/*
+	 * The warm node log can be moved after need_do_checkpoint() above.
+	 * Then the node blocks written here are out of the chain, so write
+	 * a checkpoint.
+	 */
+	if (unlikely(is_sbi_flag_set(sbi, SBI_NEED_CP)))
+		goto go_write;
+
+	/*
 	 * If it's atomic_write, it's just fine to keep write ordering. So
 	 * here we don't need to wait for node write completion, since we use
 	 * node chain which serializes node blocks. If one of node writes are

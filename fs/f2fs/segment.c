@@ -3479,9 +3479,17 @@ int f2fs_allocate_segment_for_resize(struct f2fs_sb_info *sbi, int type,
 unlock:
 	up_write(&SIT_I(sbi)->sentry_lock);
 
-	if (segno != curseg->segno)
+	if (segno != curseg->segno) {
 		f2fs_notice(sbi, "For resize: curseg of type %d: %u ==> %u",
 			    type, segno, curseg->segno);
+		/*
+		 * The chain of fsynced node blocks is cut here, so roll-forward
+		 * recovery cannot find what is fsynced from now on. Let fsync
+		 * write a checkpoint until the next checkpoint is done.
+		 */
+		if (type == CURSEG_WARM_NODE)
+			set_sbi_flag(sbi, SBI_NEED_CP);
+	}
 
 	mutex_unlock(&curseg->curseg_mutex);
 	f2fs_up_read(&SM_I(sbi)->curseg_lock);
