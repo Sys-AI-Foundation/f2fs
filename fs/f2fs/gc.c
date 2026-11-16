@@ -2286,6 +2286,14 @@ int f2fs_gc_range(struct f2fs_sb_info *sbi,
 		if (is_cursec(sbi, GET_SEC_FROM_SEG(sbi, segno)))
 			goto next;
 
+		/*
+		 * Checkpoint is blocked in the dry run of resize, so the space
+		 * freed in the meantime can't be reused. Stop before free
+		 * sections run out, and let the caller migrate the rest later.
+		 */
+		if (dry_run && !lock && has_not_enough_free_secs(sbi, 0, 0))
+			break;
+
 		do_garbage_collect(sbi, segno, &gc_list, FG_GC, true, false);
 		put_gc_inode(&gc_list);
 
@@ -2456,15 +2464,30 @@ static void update_fs_metadata(struct f2fs_sb_info *sbi, int secs)
 	}
 }
 
+/* Count the valid blocks in the last @secs sections. */
+static block_t f2fs_valid_blocks_in_tail(struct f2fs_sb_info *sbi,
+					 unsigned int secs)
+{
+	unsigned int secno;
+	block_t valid = 0;
+
+	for (secno = MAIN_SECS(sbi) - secs; secno < MAIN_SECS(sbi); secno++)
+		valid += get_valid_blocks(sbi, GET_SEG_FROM_SEC(sbi, secno),
+					  true);
+	return valid;
+}
+
 int f2fs_resize_fs(struct file *filp, __u64 block_count)
 {
 	struct f2fs_sb_info *sbi = F2FS_I_SB(file_inode(filp));
 	__u64 old_block_count, shrunk_blocks;
 	struct cp_control cpc = { CP_RESIZE, 0, 0, 0 };
+	struct cp_control sync_cpc = { __get_cp_reason(sbi), 0, 0, 0 };
 	struct f2fs_lock_context lc;
 	struct f2fs_lock_context glc;
 	struct f2fs_lock_context clc;
 	unsigned int secs, old_tail;
+	block_t valid, prev_valid;
 	bool reserved = false;
 	int err = 0;
 	__u32 rem;
@@ -2513,9 +2536,6 @@ int f2fs_resize_fs(struct file *filp, __u64 block_count)
 		goto out_drop_write;
 	}
 
-	/* stop CP to protect MAIN_SEC in free_segment_range */
-	f2fs_lock_op(sbi, &lc);
-
 	spin_lock(&sbi->stat_lock);
 	if (shrunk_blocks + valid_user_blocks(sbi) >
 			__get_available_block_count(sbi, false)) {
@@ -2533,10 +2553,31 @@ int f2fs_resize_fs(struct file *filp, __u64 block_count)
 	if (err)
 		goto out_unlock;
 
-	err = free_segment_range(sbi, secs, true);
+	/*
+	 * Migrate the blocks in the range to be shrunk before freeze_super().
+	 * Checkpoint is blocked in the dry run, so the dry run stops before
+	 * free sections run out. A checkpoint makes the space freed so far
+	 * reusable: write one first, and repeat as long as the range gets
+	 * emptier. The rest is migrated after freeze_super().
+	 */
+	valid = f2fs_valid_blocks_in_tail(sbi, secs);
+	do {
+		prev_valid = valid;
+
+		stat_inc_cp_call_count(sbi, TOTAL_CALL);
+		err = f2fs_write_checkpoint(sbi, &sync_cpc);
+		if (err)
+			break;
+
+		/* stop CP to protect MAIN_SEC in free_segment_range */
+		f2fs_lock_op(sbi, &lc);
+		err = free_segment_range(sbi, secs, true);
+		f2fs_unlock_op(sbi, &lc);
+
+		valid = f2fs_valid_blocks_in_tail(sbi, secs);
+	} while (!err && valid && valid < prev_valid);
 
 out_unlock:
-	f2fs_unlock_op(sbi, &lc);
 	f2fs_up_write_trace(&sbi->gc_lock, &glc);
 out_drop_write:
 	mnt_drop_write_file(filp);
