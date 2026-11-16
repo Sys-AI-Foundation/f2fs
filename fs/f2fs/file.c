@@ -4110,19 +4110,22 @@ static int f2fs_ioc_reserve_dev_alias(struct file *filp)
 	/* Reset the victim information to prevent GC from targeting the range */
 	f2fs_reset_gc_victim_resource(sbi, start, end);
 
-	/* Move out cursegs from the target range */
-	for (type = CURSEG_HOT_DATA; type < NR_CURSEG_PERSIST_TYPE; type++) {
-		err = f2fs_allocate_segment_for_resize(sbi, type, start, end);
-		if (err)
-			goto out_gc_unlock;
-	}
-
+	/* stop CP before moving cursegs, as f2fs_resize_fs() does */
 	f2fs_lock_op(sbi, &lc);
 
 	if (unlikely(is_sbi_flag_set(sbi, SBI_CP_DISABLED))) {
 		err = -EINVAL;
 		f2fs_unlock_op(sbi, &lc);
 		goto out_gc_unlock;
+	}
+
+	/* Move out cursegs from the target range */
+	for (type = CURSEG_HOT_DATA; type < NR_CURSEG_PERSIST_TYPE; type++) {
+		err = f2fs_allocate_segment_for_resize(sbi, type, start, end);
+		if (err) {
+			f2fs_unlock_op(sbi, &lc);
+			goto out_gc_unlock;
+		}
 	}
 
 	/* do GC to move out valid blocks in the range all at once! */
